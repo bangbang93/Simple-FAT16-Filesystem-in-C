@@ -18,4 +18,4 @@ The format of the command line is:
 
 "program name" + "IMG name" + "File desired"
 
-I have included a mock disk-image (disk.IMA) for testing purposes.
+Use this program with a FAT16 (.IMA) image.
