@@ -23,24 +23,25 @@ files *getFile(FILE *fp, char *fileName){
         fseek(fp,cur+28,SEEK_SET);
         fread(&tmp_size,1,4,fp);
         if(strcmp(tmp_name,"") != 0 && tmp_attr != 0x0F && (tmp_attr & 0x08) != 0x08 && (tmp_attr & 0x10) != 0x10){
-            tmp_fullName = malloc(sizeof(fileName) + sizeof(char)*3 + 2);
-            for (nameLength = 0; nameLength < 8; nameLength++) {
-                if (tmp_name[nameLength] != 0x20){
-                    tmp_fullName[nameLength] = tmp_name[nameLength];
-				} else{
-					break;
-                }
-			}
-            strncat(tmp_fullName, ".", 1);   // THis will separate the name from the ext
-			strncat(tmp_fullName, tmp_ext, 3);
+            	tmp_fullName = malloc(sizeof(fileName) + sizeof(char)*3 + 2);
+        	for (nameLength = 0; nameLength < 8; nameLength++) {
+                	if (tmp_name[nameLength] != 0x20){
+                    	tmp_fullName[nameLength] = tmp_name[nameLength];
+			} 
+			else{
+				break;
+                	}
+		}
+            	strncat(tmp_fullName, ".", 1);   // THis will separate the name from the ext
+		strncat(tmp_fullName, tmp_ext, 3);
         }
         if(strcmp(tmp_fullName,fileName) == 0){
 
-            buffer->name = tmp_fullName;
-            buffer->size = tmp_size;
-            fseek(fp,cur+26,SEEK_SET);
-            fread(&buffer->fatIndex,1,2,fp);
-            break;
+            	buffer->name = tmp_fullName;
+            	buffer->size = tmp_size;
+            	fseek(fp,cur+26,SEEK_SET);
+            	fread(&buffer->fatIndex,1,2,fp);
+            	break;
         }
         cur = cur + offset;
         fseek(fp, cur, SEEK_SET);
@@ -49,50 +50,50 @@ files *getFile(FILE *fp, char *fileName){
 }
 //This function will get the fat phsyical address
 int getFatEntry(FILE *fp, int entry){ 
-    long start = 512 + 1 + (3 * entry) /2;
-    long end = 512 + (3 * entry) /2;
-    uint8_t endbits;
-    uint16_t startbits,entrybits;   //Use the provided formula 
-    fseek(fp,start,SEEK_SET);       //Change from little endian and return value
-    fread(&startbits,1,1,fp);
-    fseek(fp,end,SEEK_SET);
-    fread(&endbits,1,1,fp);
-    if(entry%2 == 0){
-        startbits<<=12;
-        startbits>>=4;
-    } else{
-        startbits<<=8;
-        startbits>>=4;
-        endbits>>=4;
+    	long start = 512 + 1 + (3 * entry) /2;
+    	long end = 512 + (3 * entry) /2;
+    	uint8_t endbits;
+    	uint16_t startbits,entrybits;   //Use the provided formula 
+    	fseek(fp,start,SEEK_SET);       //Change from little endian and return value
+    	fread(&startbits,1,1,fp);
+    	fseek(fp,end,SEEK_SET);
+    	fread(&endbits,1,1,fp);
+    	if(entry%2 == 0){
+        	startbits<<=12;
+        	startbits>>=4;
+    	} else{
+        	startbits<<=8;
+        	startbits>>=4;
+        	endbits >>=4;
         }
-    entrybits = startbits + endbits;
-    return entrybits;
+    	entrybits = startbits + endbits;
+    	return entrybits;
 }
 //This function will copy file from the image to the current linux dir
 void copyFile(FILE *input, FILE *output,files *entry){
-    int fatEntry = entry->fatIndex;
-    int base = 512;
-    int i,dataIndex,dataStart = 0;
-    char readByte;
+    	int fatEntry = entry->fatIndex;
+    	int base = 512;
+    	int i,dataIndex,dataStart = 0;
+    	char readByte;
     
-    while(fatEntry<4088){ //Iterate though every sector and copy the data
-        dataIndex = 33 + fatEntry - 2;
-        dataStart = dataIndex * 512;
-        for(i = 0;i < 512;i++){
-            fseek(input,dataStart+i,SEEK_SET);
-            fread(&readByte,1,1,input);
-            fwrite(&readByte,1,1,output);
-        }
+    	while(fatEntry<4088){ //Iterate though every sector and copy the data
+        	dataIndex = 33 + fatEntry - 2;
+        	dataStart = dataIndex * 512;
+        	for(i = 0;i < 512;i++){
+            		fseek(input,dataStart+i,SEEK_SET);
+            		fread(&readByte,1,1,input);
+            		fwrite(&readByte,1,1,output);
+	        }
         
-        fatEntry = getFatEntry(input,fatEntry);
-    }
+        	fatEntry = getFatEntry(input,fatEntry);
+    	}
 }
 
 int main(int argc, char* argv[])
 {
 	FILE *fp;
-    char *fileName = argv[2]; //get the file name
-    if (argc < 3) { //check if its there
+    	char *fileName = argv[2]; //get the file name
+    	if (argc < 3) { //check if its there
 		printf("Enter a disk image and a file name");
 		return 1;
 	} else if((fp=fopen(argv[1],"r"))){
@@ -103,18 +104,19 @@ int main(int argc, char* argv[])
 			fileName[i] = toupper(c);
 		}
         
-        files *fileEntry = getFile(fp,fileName); //get the file info from the root dir
-		if(fileEntry->name == NULL){
-            printf("File not found\n");
-        } else{
-            FILE *output;
-            if((output = fopen(fileName, "ab")) == NULL){ //open the file on the current dir
-                printf("Error openning the file\n");
-                return 1;
-            }
-            copyFile(fp,output,fileEntry); //copy to linux
-            fclose(output);
-        }
+        	files *fileEntry = getFile(fp,fileName); //get the file info from the root dir
+			if(fileEntry->name == NULL){
+            		printf("File not found\n");
+        		} 
+        	else{
+            		FILE *output;
+            		if((output = fopen(fileName, "ab")) == NULL){ //open the file on the current dir
+                		printf("Error openning the file\n");
+                		return 1;
+                	}
+            		copyFile(fp,output,fileEntry); //copy to linux
+            		fclose(output);
+        	}
 	}
 	else
 		printf("Fail to open the image file.\n");
